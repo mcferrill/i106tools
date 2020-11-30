@@ -21,6 +21,7 @@ download_project(
     GIT_TAG             cmake
 )
 add_subdirectory(${libirig106_SOURCE_DIR} ${libirig106_BINARY_DIR})
+include_directories("${libirig106_SOURCE_DIR}/include")
 
 # Individual tools
 add_executable(i106stat src/i106stat.c)
