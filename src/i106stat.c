@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "irig106ch10.h"
 #include "i106stat_args.c"
@@ -11,7 +13,34 @@ typedef struct {
     int id;
     unsigned int type;
     int packets;
-} ChanSpec;
+} Channel;
+
+
+// Show progress on screen
+void show_progress(float percent){
+    printf("\r[");
+    int stars = 78 * percent;
+    for (int i=0;i<stars;i++)
+        printf("#");
+    for (int i=0;i<78 - stars;i++)
+        printf("_");
+    printf("]");
+    fflush(stdout);
+}
+
+
+// Print a more human-readable size
+char * pretty_size(int64_t size){
+    char units[][3] = {"b", "kb", "mb", "gb", "tb"};
+    int unit = 0;
+    char *result = malloc(20);
+    while (size > 1024){
+        unit++;
+        size /= 1024;
+    }
+    sprintf(result, "%.*ld%s", 2, size, units[unit]);
+    return result;
+}
 
 
 int main(int argc, char *argv[]){
@@ -30,34 +59,37 @@ int main(int argc, char *argv[]){
     // Channel info
 	I106C10Header header;
     int packets = 0, input_handle;
-    float byte_size = 0.0;
-    static ChanSpec * channels[0x10000][255];
+    static Channel * channels[0x10000][255];
 
-    // Open the source file.
+    // Open the source file and get the total size.
     I106Status status = I106C10Open(&input_handle, argv[1], READ);
     if (status != I106_OK){
-        char msg[200] = "Error opening file ";
-        strcat(msg, argv[1]);
-        printf("%s", msg);
+        printf("Error opening file %s", argv[1]);
         return 1;
     }
+    int64_t length = (int64_t)lseek(handles[input_handle].File, 0, SEEK_END);
+    lseek(handles[input_handle].File, 0, SEEK_SET);
 
-    // Iterate over selected packets (based on args).
+    printf("Scanning %s of data\n", pretty_size(length));
+
+    // Iterate over packets.
     while (1){
 
         // Exit once file ends.
         if ((status = I106C10ReadNextHeader(input_handle, &header)))
             break;
 
+        int64_t pos = lseek(handles[input_handle].File, 0, SEEK_CUR);
+        show_progress((float)pos / (float)length);
+
         // Increment overall size and packet counts.
-        byte_size += header.PacketLength;
         packets++;
 
         // Create a listing if none exists.
         if (channels[header.ChannelID][header.DataType] == NULL){
-            ChanSpec channel = {header.ChannelID, header.DataType, 1};
-            channels[header.ChannelID][header.DataType] = malloc(sizeof(ChanSpec));
-            memcpy(channels[header.ChannelID][header.DataType], &channel, sizeof(ChanSpec));
+            Channel channel = {header.ChannelID, header.DataType, 1};
+            channels[header.ChannelID][header.DataType] = malloc(sizeof(Channel));
+            memcpy(channels[header.ChannelID][header.DataType], &channel, sizeof(Channel));
         }
 
         // Increment packet count if not
@@ -66,8 +98,13 @@ int main(int argc, char *argv[]){
     }
 
 	// Print details for each channel.
-    printf("Channel ID      Data Type%35sPackets\n", "");
-    printf("--------------------------------------------------------------------------------\n");
+    printf("\r%*s\n", 80, "-");
+    for (int i=0;i<80;i++)
+        printf("-");
+    printf("\nChannel ID      Data Type%35sPackets\n", "");
+    for (int i=0;i<80;i++)
+        printf("-");
+    printf("\n");
     int channel_count = 0;
     for (int i=0;i<MAX_CHANNELS;i++){
         for (int j=0;j<=255;j++){
@@ -82,18 +119,10 @@ int main(int argc, char *argv[]){
         }
     }
 
-    // Find a more readable size unit than bytes.
-    char units[][3] = {"b", "kb", "mb", "gb", "tb"};
-    int unit = 0;
-    while (byte_size > 1024){
-        unit++;
-        byte_size /= 1024;
-    }
-
     // Print file summary.
     printf("--------------------------------------------------------------------------------\n");
     printf("Summary for %s:\n", argv[1]);
-    printf("    Size: %.*f%s\n", 2, byte_size, units[unit]);
+    printf("    Size: %s\n", pretty_size(length));
     printf("    Packets: %d\n", packets);
     printf("    Channels: %d\n", channel_count);
 }
