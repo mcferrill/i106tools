@@ -7,10 +7,10 @@ import sys
 
 
 # Compile docopt usage to C
-docopt_path = f'{dirname(__file__)}/src/docopt/docopt.c/docopt_c.py'
-for filename in glob.glob('src/docopt/*.docopt'):
-    name, _ = splitext(basename(filename))
-    os.system(f'{sys.executable} {docopt_path} {filename} -o src/{name}_args.c')
+# docopt_path = f'{dirname(__file__)}/src/docopt/docopt.c/docopt_c.py'
+# for filename in glob.glob('src/docopt/*.docopt'):
+#     name, _ = splitext(basename(filename))
+#     os.system(f'{sys.executable} {docopt_path} {filename} -o src/{name}_args.c')
 
 # Clear build directory before building
 if 'rebuild' in sys.argv:
