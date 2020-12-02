@@ -2,13 +2,57 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <cstring>
+#include <unordered_map>
 
 #ifndef _WIN32
 #include <unistd.h>
 #endif
 
-#include "irig106ch10.h"
+
+extern "C" {
+    #include "irig106ch10.h"
+}
+
+
+// Possible data types
+std::unordered_map<int, std::string> TYPES = {
+    {0x0, "Computer F0 - User Defined"},
+    {0x1, "Computer F1 - Setup/TMATS"},
+    {0x2, "Computer F2 - Events"},
+    {0x3, "Computer F3 - Index"},
+    {0x4, "Computer F3 - Streaming"},
+    {0x9, "PCM F1"},
+    {0x11, "Time F1 - RCC/GPS/RTC"},
+    {0x12, "Time F2 - Network"},
+    {0x19, "1553 F1 - 1553B Data"},
+    {0x20, "1553 F2 - 16PP194 Data"},
+    {0x21, "Analog F1"},
+    {0x29, "Discrete F1"},
+    {0x30, "Message F0"},
+    {0x38, "ARINC-429 F0"},
+    {0x40, "Video F0 - MPEG-2/H.264"},
+    {0x41, "Video F1 - 13818-1 MP2"},
+    {0x42, "Video F2 - MPEG-4"},
+    {0x43, "Video F3 - MJPEG"},
+    {0x44, "Video F4 - MJPEG-2000"},
+    {0x48, "Image F0 - Image Data"},
+    {0x49, "Image F1 - Still"},
+    {0x4a, "Image F2 - Dynamic"},
+    {0x50, "UART F0"},
+    {0x58, "1394 F0 - Transaction"},
+    {0x59, "1394 F1 - Physical"},
+    {0x60, "Parallel F0"},
+    {0x68, "Ethernet F0"},
+    {0x69, "Ethernet F1 - UDP"},
+    {0x70, "TSPI/CTS F0 - GPS"},
+    {0x71, "TSPI/CTS F1 - EAG ACMI"},
+    {0x72, "TSPI/CTS F2 - ACTTS"},
+    {0x78, "CAN Bus"},
+    {0x79, "Fibre F0"},
+    {0x7a, "Fibre F1"},
+};
 
 
 const int MAX_CHANNELS = 0x10000;
@@ -42,10 +86,10 @@ void show_progress(float percent){
 
 
 // Print a more human-readable size
-char * pretty_size(int64_t size){
+char* pretty_size(int64_t size){
     char units[][3] = {"b", "kb", "mb", "gb", "tb"};
     int unit = 0;
-    char *result = malloc(20);
+    char *result = (char *)malloc(20);
     while (size > 1024){
         unit++;
         size /= 1024;
@@ -57,10 +101,12 @@ char * pretty_size(int64_t size){
 
 // Print summary for a channel.
 void print_channel(int id, int type, int packets){
-    printf("Channel%3d", id);
-    printf("%6s", "");
-    printf("0x%-34x", type);
-    printf("%7d packets", packets);
+    std::string type_name = TYPES[type];
+    if (type_name == "")
+        type_name = "Unknown";
+    printf("| Channel%3d ", id);
+    printf("| 0x%02d %-40s ", type, type_name.c_str());
+    printf("| %7d packets |", packets);
     printf("\n");
 }
 
@@ -132,7 +178,7 @@ int main(int argc, char *argv[]){
     printf("\r%*s\n", 80, "-");
     for (int i=0;i<80;i++)
         printf("-");
-    printf("\nChannel ID      Data Type%35sPackets\n", "");
+    printf("\n| Channel ID | Data Type%36s | Packets%9s|\n", "", "");
     for (int i=0;i<80;i++)
         printf("-");
     printf("\n");
