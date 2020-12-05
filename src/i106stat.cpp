@@ -14,8 +14,6 @@
 #include <io.h>
 #endif
 
-#include "i106stat.hpp"
-
 
 extern "C" {
     #include "irig106ch10.h"
@@ -142,6 +140,7 @@ int main(int argc, char *argv[]){
     off_t pos = 0;
 
     printf("Scanning %s of data\n", pretty_size(length));
+    float progress, last_progress;
 
     // Iterate over packets.
     while (1){
@@ -151,7 +150,11 @@ int main(int argc, char *argv[]){
             break;
 
         pos += header.PacketLength;
-        show_progress((float)pos / (float)length);
+        progress = (float)pos / (float)length;
+        if ((int)(progress * 100) > last_progress){
+            show_progress(progress);
+            last_progress = (int)(progress * 100);
+        }
 
         // Increment overall size and packet counts.
         packets++;
