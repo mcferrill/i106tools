@@ -8,6 +8,7 @@ project(i106tools
 # Build flags
 if (MSVC)
     add_compile_options("-D_MSC_VER")
+    add_compile_options("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
 elseif(NOT APPLE)
     add_compile_options("-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE")
 endif()
@@ -24,6 +25,5 @@ add_subdirectory(${libirig106_SOURCE_DIR} ${libirig106_BINARY_DIR})
 include_directories("${libirig106_SOURCE_DIR}/include")
 
 # Individual tools
-# include_directories("include")
 add_executable(i106stat src/i106stat.cpp)
 target_link_libraries(i106stat libirig106)

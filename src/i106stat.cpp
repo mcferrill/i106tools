@@ -4,11 +4,17 @@
 #include <stdlib.h>
 #include <string>
 #include <cstring>
+#include <iostream>
 #include <unordered_map>
+#include <cmath>
 
 #ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
 #endif
+
+#include "i106stat.hpp"
 
 
 extern "C" {
@@ -55,7 +61,7 @@ std::unordered_map<int, std::string> TYPES = {
 };
 
 
-const int MAX_CHANNELS = 0x10000;
+const int MAX_CHANNELS = 0xff;
 
 typedef struct {
     int id;
@@ -73,15 +79,16 @@ typedef struct {
 
 
 // Show progress on screen
-void show_progress(float percent){
-    printf("\r[");
-    int stars = 78 * percent;
+void show_progress(double percent){
+    const int width = 73;
+    int stars = (width * percent);
+    std::string bar;
     for (int i=0;i<stars;i++)
-        printf("#");
-    for (int i=0;i<78 - stars;i++)
-        printf("_");
-    printf("]");
-    fflush(stdout);
+        bar.append("#");
+    for (int i=0;i<(width-stars);i++)
+        bar.append(" ");
+
+    std::cout << "\r[" + bar + "] %" << std::ceil(percent * 100) << std::flush;
 }
 
 
@@ -97,7 +104,6 @@ char* pretty_size(int64_t size){
     sprintf(result, "%.*ld%s", 2, size, units[unit]);
     return result;
 }
-
 
 // Print summary for a channel.
 void print_channel(int id, int type, int packets){
@@ -131,9 +137,9 @@ int main(int argc, char *argv[]){
         printf("Error opening file %s", argv[1]);
         return 1;
     }
-    long length = lseek(handles[input_handle].File, 0, SEEK_END);
+    off_t length = lseek(handles[input_handle].File, 0, SEEK_END);
     lseek(handles[input_handle].File, 0, SEEK_SET);
-    long pos = 0;
+    off_t pos = 0;
 
     printf("Scanning %s of data\n", pretty_size(length));
 

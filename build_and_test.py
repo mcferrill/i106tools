@@ -25,12 +25,13 @@ if not os.path.exists('build'):
 os.chdir('build')
 
 # Run cmake and whatever os-specific build tool.
-os.system('cmake ..')
 if sys.platform == 'win32':
+    os.system('cmake -G "Visual Studio 16 2019" ..')
     os.system('cmake --build . --config Release')
     os.chdir('..')
     # os.system('.\\build\\Release\\test_runner.exe')
 else:
+    os.system('cmake ..')
     os.system('make')
     os.chdir('..')
     # os.system('./build/i106stat')
