@@ -7,23 +7,21 @@ project(i106tools
 
 # Build flags
 if (MSVC)
-    add_compile_options("-D_MSC_VER")
     add_compile_options("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
-elseif(NOT APPLE)
-    add_compile_options("-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE")
 endif()
-set(CMAKE_C_FLAGS "-ggdb -fpack-struct=1 -fPIC -std=c++11 -Wall")
 
 # Library
 include(DownloadProject.cmake)
 download_project(
-    PROJ                libirig106
+    PROJ                irig106
     GIT_REPOSITORY      https://github.com/atac/libirig106.git
-    GIT_TAG             cmake
+    GIT_TAG             0.2.0
+    UPDATE_DISCONNECTED 1
+    QUIET
 )
-add_subdirectory(${libirig106_SOURCE_DIR} ${libirig106_BINARY_DIR})
-include_directories("${libirig106_SOURCE_DIR}/include")
+add_subdirectory(${irig106_SOURCE_DIR} ${irig106_BINARY_DIR})
+include_directories("${irig106_SOURCE_DIR}/include")
 
 # Individual tools
 add_executable(i106stat src/i106stat.cpp)
-target_link_libraries(i106stat libirig106)
+target_link_libraries(i106stat irig106)
