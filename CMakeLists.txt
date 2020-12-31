@@ -25,3 +25,6 @@ include_directories("${irig106_SOURCE_DIR}/include")
 # Individual tools
 add_executable(i106stat src/i106stat.cpp)
 target_link_libraries(i106stat irig106)
+
+add_executable(demo src/demo.c)
+target_link_libraries(demo irig106)
