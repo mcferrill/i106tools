@@ -1,8 +1,0 @@
-
-i106stat - show details of a chapter 10 file
-
-Usage:
-    i106stat <file> [options]
-
-Options:
-    --help                Show this message.

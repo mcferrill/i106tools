@@ -11,6 +11,7 @@
 #include <cmath>
 
 #ifndef _WIN32
+#define O_BINARY 0
 #include <unistd.h>
 #else
 #include <io.h>
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]){
 
     // Open the source file and get the total size.
     I106Status status;
-    int fd = open(argv[1], 0);
+    int fd = open(argv[1], O_BINARY);
     off_t length = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
     off_t pos = 0;
