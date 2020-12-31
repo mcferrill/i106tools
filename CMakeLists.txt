@@ -15,7 +15,7 @@ include(DownloadProject.cmake)
 download_project(
     PROJ                irig106
     GIT_REPOSITORY      https://github.com/atac/libirig106.git
-    GIT_TAG             0.2.0
+    GIT_TAG             master 
     UPDATE_DISCONNECTED 1
     QUIET
 )

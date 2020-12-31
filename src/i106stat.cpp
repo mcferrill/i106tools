@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string>
 #include <cstring>
@@ -16,7 +18,7 @@
 
 
 extern "C" {
-    #include "irig106ch10.h"
+    #include "libirig106.h"
 }
 
 
@@ -76,20 +78,6 @@ typedef struct {
 } Channel;
 
 
-// Show progress on screen
-void show_progress(double percent){
-    const int width = 73;
-    int stars = (width * percent);
-    std::string bar;
-    for (int i=0;i<stars;i++)
-        bar.append("#");
-    for (int i=0;i<(width-stars);i++)
-        bar.append(" ");
-
-    std::cout << "\r[" + bar + "] %" << std::ceil(percent * 100) << std::flush;
-}
-
-
 // Print a more human-readable size
 char* pretty_size(int64_t size){
     char units[][3] = {"b", "kb", "mb", "gb", "tb"};
@@ -125,18 +113,15 @@ int main(int argc, char *argv[]){
 
     // Channel info
 	I106C10Header header;
-    int packets = 0, input_handle;
+    int packets = 0;
     Channel channels[MAX_CHANNELS];
     memset(channels, 0, MAX_CHANNELS * sizeof(Channel));
 
     // Open the source file and get the total size.
-    I106Status status = I106C10Open(&input_handle, argv[1], READ);
-    if (status != I106_OK){
-        printf("Error opening file %s", argv[1]);
-        return 1;
-    }
-    off_t length = lseek(handles[input_handle].File, 0, SEEK_END);
-    lseek(handles[input_handle].File, 0, SEEK_SET);
+    I106Status status;
+    int fd = open(argv[1], 0);
+    off_t length = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
     off_t pos = 0;
 
     printf("Scanning %s of data\n", pretty_size(length));
@@ -146,15 +131,15 @@ int main(int argc, char *argv[]){
     while (1){
 
         // Exit once file ends.
-        if ((status = I106C10ReadNextHeader(input_handle, &header)))
+        if ((status = I106NextHeader(fd, &header)))
             break;
 
         pos += header.PacketLength;
-        progress = (float)pos / (float)length;
-        if ((int)(progress * 100) > last_progress){
-            show_progress(progress);
-            last_progress = (int)(progress * 100);
-        }
+
+        // Skip the packet body and trailer
+        lseek(fd, pos, SEEK_SET);
+
+        std::cout << "\r" << std::ceil((pos/length) * 100) << "%" << std::flush;
 
         // Increment overall size and packet counts.
         packets++;
